@@ -13,15 +13,22 @@
 
 'use strict';
 const rp = require('request-promise');
+
 const ACTION_GET_WEATHER = "getWeather";
 const ACTION_IS_RAINING = "isRaining";
+
 const AREA_SINGAPORE = "Singapore";
+
 const DATE_NOW = "now";
 const SIMPLE_DATE_NOW = "now";
 const SIMPLE_DATE_TODAY = "today";
 const SIMPLE_DATE_TOMORROW = "tomorrow";
 const SIMPLE_DATE_DAY_AFTER_TOMORROW = "the day after tomorrow";
 const SIMPLE_DATE_INVALID = "invalid";
+
+const EVENT_RAIN = "rain";
+const EVENT_SHOWER = "shower";
+
 const DEFAULT_FALLBACK_INTENT = "Sorry, I don't know about the weather";
 exports.weatherWebhook = (req, res) => {
     let action = req.body.queryResult.action;
@@ -71,56 +78,6 @@ function getDateObj(req) {
     return dateObj;
 }
 
-function getWeather(res, area, dateObj) {
-    if (dateObj.simpleDate === SIMPLE_DATE_NOW) {
-        getWeatherNow(res, area, dateObj);
-    } else if (dateObj.simpleDate === SIMPLE_DATE_TODAY) {
-        getWeatherToday(res, area, dateObj);
-    } else {
-        callWeatherApiFourDays(area, dateObj)
-        .then((weather) => {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': weather }));
-        })
-        .catch((err) => {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': err }));
-        });
-    }
-}
-
-function getWeatherNow(res, area, dateObj) {
-    if (area !== AREA_SINGAPORE) {
-        callWeatherApiTwoHours(area)
-        .then((weather) => {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': weather }));
-        })
-        .catch((err) => {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': err }));
-        });
-    } else {
-        getWeatherToday(res, area, dateObj);
-    }
-}
-
-function getWeatherToday(res, area, dateObj) {
-    callWeatherApiTwentyFourHours(area)
-    .then((weather) => {
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify({ 'fulfillmentText': weather }));
-    })
-    .catch((err) => {
-        res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify({ 'fulfillmentText': err }));
-    });
-}
-
-function isRaining(res, area, dateObj) {
-    //
-}
-
 function getFormattedDate(date) {
     let formattedDate = date.split("T")[0];
     return formattedDate;
@@ -144,6 +101,52 @@ function getSimpleDate(date) {
     return simpleDate;
 }
 
+function getWeather(res, area, dateObj) {
+    if (dateObj.simpleDate === SIMPLE_DATE_NOW) {
+        getWeatherNow(area)
+        .then((weather) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ 'fulfillmentText': weather }));
+        })
+        .catch((err) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ 'fulfillmentText': err }));
+        });
+    } else if (dateObj.simpleDate === SIMPLE_DATE_TODAY) {
+        getWeatherToday(area)
+        .then((weather) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ 'fulfillmentText': weather }));
+        })
+        .catch((err) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ 'fulfillmentText': err }));
+        });
+    } else {
+        callWeatherApiFourDays(area, dateObj)
+        .then((weather) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ 'fulfillmentText': weather }));
+        })
+        .catch((err) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ 'fulfillmentText': err }));
+        });
+    }
+}
+
+function getWeatherNow(area) {
+    if (area !== AREA_SINGAPORE) {
+        return callWeatherApiTwoHours(area);
+    } else {
+        return getWeatherToday(area);
+    }
+}
+
+function getWeatherToday(area) {
+    return callWeatherApiTwentyFourHours(area);
+}
+
 function callWeatherApiTwoHours (area) {
     return new Promise((resolve, reject) => {
         let options = {
@@ -160,7 +163,7 @@ function callWeatherApiTwoHours (area) {
             for (let i = 0; i < forecasts.length; i ++) {
                 let forecast = forecasts[i];
                 if (forecast.area.toLowerCase() === area.toLowerCase()) {
-                    weather = "The weather in " + area + " will be " + forecast.forecast.toLowerCase() + ".";
+                    weather = "The weather in " + area + " is " + forecast.forecast.toLowerCase() + ".";
                     resolve(weather);
                 } else if (i < forecasts.length) {
                     // do nothing
@@ -231,5 +234,96 @@ function callWeatherApiFourDays (area, dateObj) {
         .catch(function (err) {
             reject(err);
         });
+    });
+}
+
+function isRaining(res, area, dateObj) {
+    if (dateObj.simpleDate === SIMPLE_DATE_NOW) {
+        getWeatherNow(area)
+        .then((weather) => {
+            return getIsRainingNow(area, weather);
+        })
+        .then((isRainingString) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ 'fulfillmentText': isRainingString }));
+        })
+        .catch((err) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ 'fulfillmentText': err }));
+        });
+    } else if (dateObj.simpleDate === SIMPLE_DATE_TODAY) {
+        getWeatherToday(area)
+        .then((weather) => {
+            return getIsRainingToday(area, weather);
+        })
+        .then((isRainingString) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ 'fulfillmentText': isRainingString }));
+        })
+        .catch((err) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ 'fulfillmentText': err }));
+        });
+    } else {
+        callWeatherApiFourDays(area, dateObj)
+        .then((weather) => {
+            return getIsRainingFourDays(area, dateObj, weather);
+        })
+        .then((isRainingString) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ 'fulfillmentText': isRainingString }));
+        })
+        .catch((err) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ 'fulfillmentText': err }));
+        });
+    }
+}
+
+function getIsRainingNow(area, weather) {
+    if (area !== AREA_SINGAPORE) {
+        return getIsRainingNowPromise(area, weather);
+    } else {   
+        return getIsRainingToday(area, weather);
+    }
+}
+
+function getIsRainingNowPromise(area, weather) {
+    return new Promise((resolve) => {
+        let isRainingBool = weather.includes(EVENT_RAIN) || weather.includes(EVENT_SHOWER);
+        let isRainingString;
+        if (!isRainingBool) {
+            isRainingString = "It is not raining in " + area + ".";
+        } else {
+            isRainingString = "It is raining in " + area + ".";
+        }
+        resolve(isRainingString);
+    });
+}
+
+function getIsRainingToday(area, weather) {
+    return new Promise((resolve) => {
+        let isRainingBool = weather.includes(EVENT_RAIN) || weather.includes(EVENT_SHOWER);
+        let isRainingString;
+        if (!isRainingBool) {
+            isRainingString = "It will not be raining in " + area + " today.";
+        } else {
+            isRainingString = "It will be raining in " + area + " today.";
+        }
+        resolve(isRainingString);
+    });
+}
+
+function getIsRainingFourDays(area, dateObj, weather) {
+    return new Promise((resolve) => {
+        let simpleDate = dateObj.simpleDate;
+        let isRainingBool = weather.includes(EVENT_RAIN) || weather.includes(EVENT_SHOWER);
+        let isRainingString;
+        if (!isRainingBool) {
+            isRainingString = "It will not be raining in " + area + simpleDate + ".";
+        } else {
+            isRainingString = "It will be raining in " + area + simpleDate + ".";
+        }
+        resolve(isRainingString);
     });
 }
