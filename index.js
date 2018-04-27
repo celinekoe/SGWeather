@@ -14,8 +14,10 @@
 'use strict';
 const rp = require('request-promise');
 
-const ACTION_GET_WEATHER = "getWeather";
-const ACTION_IS_RAINING = "isRaining";
+const INTENT_GET_WEATHER = "GetWeather";
+const INTENT_IS_RAINING = "IsRaining";
+const INTENT_WEATHER_CONTEXT = "WeatherContext";
+const INTENT_RAINING_CONTEXT = "RainingContext";
 
 const AREA_SINGAPORE = "Singapore";
 
@@ -31,13 +33,14 @@ const EVENT_SHOWER = "shower";
 
 const DEFAULT_FALLBACK_INTENT = "Sorry, I don't know about the weather";
 exports.weatherWebhook = (req, res) => {
-    let action = req.body.queryResult.action;
+    let intent = req.body.queryResult.intent.displayName;
+    console.log("printing intent..." + intent);
     let area = getArea(req);
     let dateObj = getDateObj(req);
 
-    if (action === ACTION_GET_WEATHER) {
+    if (intent === INTENT_GET_WEATHER || intent === INTENT_WEATHER_CONTEXT) {
         getWeather(res, area, dateObj);
-    } else if (action === ACTION_IS_RAINING) {
+    } else if (intent === INTENT_IS_RAINING || intent === INTENT_RAINING_CONTEXT) {
         isRaining(res, area, dateObj);
     } else {
         res.setHeader('Content-Type', 'application/json');
@@ -320,9 +323,9 @@ function getIsRainingFourDays(area, dateObj, weather) {
         let isRainingBool = weather.includes(EVENT_RAIN) || weather.includes(EVENT_SHOWER);
         let isRainingString;
         if (!isRainingBool) {
-            isRainingString = "It will not be raining in " + area + simpleDate + ".";
+            isRainingString = "It will not be raining in " + area + " " + simpleDate + ".";
         } else {
-            isRainingString = "It will be raining in " + area + simpleDate + ".";
+            isRainingString = "It will be raining in " + area + " " + simpleDate + ".";
         }
         resolve(isRainingString);
     });
