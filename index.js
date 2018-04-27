@@ -13,31 +13,78 @@
 
 'use strict';
 const rp = require('request-promise');
+const ACTION_GET_WEATHER = "getWeather";
+const ACTION_IS_RAINING = "isRaining";
+const AREA_SINGAPORE = "Singapore";
+const DEFAULT_FALLBACK_INTENT = "Sorry, I don't know about the weather";
 exports.weatherWebhook = (req, res) => {
+    let action = req.body.queryResult.action;
+    let area = getArea(req);
+    let dateObj = getDateObj(req);
 
-    let area = "";
+    if (action === ACTION_GET_WEATHER) {
+        getWeather(res, area, dateObj);
+    } else if (action === ACTION_IS_RAINING) {
+        isRaining(res, area, dateObj);
+    } else {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify({ 'fulfillmentText': DEFAULT_FALLBACK_INTENT }));
+    }
+};
+
+function getArea(req) {
+    let area;
     if (req.body.queryResult.parameters["area"]) {
         area = req.body.queryResult.parameters["area"];
     } else {
-        area = "no area";
+        area = AREA_SINGAPORE;
     }
+    return area;
+}
 
+function getDateObj(req) {
     let date;
     let simpleDate;
+    let dateObj;
     if (req.body.queryResult.parameters["date"]) {
         date = req.body.queryResult.parameters["date"];
         date = getFormattedDate(date);
         simpleDate = getSimpleDate(date);
+        dateObj = {
+            date,
+            simpleDate,
+        }
     } else {
         date = "now";
         simpleDate = "now";
+        dateObj = {
+            date,
+            simpleDate,
+        }
     }
+    return dateObj;
+}
 
-    // no date, no area - need to handle
-    // date, no area - ok
-    // no date, area - ok
-    // date, area - area is ignored
-    if (simpleDate === "now") {
+function getWeather(res, area, dateObj) {
+    if (dateObj.simpleDate === "now") {
+        getWeatherNow(res, area, dateObj);
+    } else if (dateObj.simpleDate === "today") {
+        getWeatherToday(res, area, dateObj);
+    } else {
+        callWeatherApiFourDays(area, dateObj)
+        .then((weather) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ 'fulfillmentText': weather }));
+        })
+        .catch((err) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.send(JSON.stringify({ 'fulfillmentText': err }));
+        });
+    }
+}
+
+function getWeatherNow(res, area, dateObj) {
+    if (area !== AREA_SINGAPORE) {
         callWeatherApiTwoHours(area)
         .then((weather) => {
             res.setHeader('Content-Type', 'application/json');
@@ -47,30 +94,26 @@ exports.weatherWebhook = (req, res) => {
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify({ 'fulfillmentText': err }));
         });
-    } else if (simpleDate === "today") {
-        // if has date, ignore area parameter
-        callWeatherApiTwentyFourHours()
-        .then((weather) => {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': weather }));
-        })
-        .catch((err) => {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': err }));
-        });
     } else {
-        // if has date, ignore area parameter
-        callWeatherApiFourDays(date, simpleDate)
-        .then((weather) => {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': weather }));
-        })
-        .catch((err) => {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': err }));
-        });
+        getWeatherToday(res, area, dateObj);
     }
-};
+}
+
+function getWeatherToday(res, area, dateObj) {
+    callWeatherApiTwentyFourHours(area)
+    .then((weather) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify({ 'fulfillmentText': weather }));
+    })
+    .catch((err) => {
+        res.setHeader('Content-Type', 'application/json');
+        res.send(JSON.stringify({ 'fulfillmentText': err }));
+    });
+}
+
+function isRaining(res, area, dateObj) {
+    //
+}
 
 function getFormattedDate(date) {
     let formattedDate = date.split("T")[0];
@@ -126,7 +169,7 @@ function callWeatherApiTwoHours (area) {
     });
 }
 
-function callWeatherApiTwentyFourHours() {
+function callWeatherApiTwentyFourHours(area) {
     return new Promise((resolve, reject) => {
         let options = {
             uri: "https://api.data.gov.sg/v1/environment/24-hour-weather-forecast",
@@ -138,7 +181,7 @@ function callWeatherApiTwentyFourHours() {
         rp(options)
         .then(function (response) {
             let forecast = response.items[0].general.forecast;
-            let weather = "The weather today will be " + forecast.toLowerCase() + ".";
+            let weather = "The weather in " + area + " for today will be " + forecast.toLowerCase() + ".";
             resolve(weather);
         })
         .catch(function (err) {
@@ -147,8 +190,10 @@ function callWeatherApiTwentyFourHours() {
     });
 }
 
-function callWeatherApiFourDays (date, simpleDate) {
+function callWeatherApiFourDays (area, dateObj) {
     return new Promise((resolve, reject) => {
+        let date = dateObj.date;
+        let simpleDate = dateObj.simpleDate;
         let options = {
             uri: "https://api.data.gov.sg/v1/environment/4-day-weather-forecast",
             headers: {
@@ -164,10 +209,10 @@ function callWeatherApiFourDays (date, simpleDate) {
                 let forecast = forecasts[i];
                 if (forecast.date === date) {
                     if (simpleDate !== "invalid") {
-                        weather = "The weather for " + simpleDate + " will be " + forecast.forecast.toLowerCase();
+                        weather = "The weather in " + area + " for " + simpleDate + " will be " + forecast.forecast.toLowerCase();
                         resolve(weather);
                     } else {
-                        weather = "The weather on " + date + " will be " + forecast.forecast.toLowerCase();
+                        weather = "The weather in " + area + " on " + date + " will be " + forecast.forecast.toLowerCase();
                         resolve(weather);
                     }
                 } else if (i < forecasts.length) {
