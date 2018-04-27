@@ -16,6 +16,12 @@ const rp = require('request-promise');
 const ACTION_GET_WEATHER = "getWeather";
 const ACTION_IS_RAINING = "isRaining";
 const AREA_SINGAPORE = "Singapore";
+const DATE_NOW = "now";
+const SIMPLE_DATE_NOW = "now";
+const SIMPLE_DATE_TODAY = "today";
+const SIMPLE_DATE_TOMORROW = "tomorrow";
+const SIMPLE_DATE_DAY_AFTER_TOMORROW = "the day after tomorrow";
+const SIMPLE_DATE_INVALID = "invalid";
 const DEFAULT_FALLBACK_INTENT = "Sorry, I don't know about the weather";
 exports.weatherWebhook = (req, res) => {
     let action = req.body.queryResult.action;
@@ -55,8 +61,8 @@ function getDateObj(req) {
             simpleDate,
         }
     } else {
-        date = "now";
-        simpleDate = "now";
+        date = DATE_NOW;
+        simpleDate = SIMPLE_DATE_NOW;
         dateObj = {
             date,
             simpleDate,
@@ -66,9 +72,9 @@ function getDateObj(req) {
 }
 
 function getWeather(res, area, dateObj) {
-    if (dateObj.simpleDate === "now") {
+    if (dateObj.simpleDate === SIMPLE_DATE_NOW) {
         getWeatherNow(res, area, dateObj);
-    } else if (dateObj.simpleDate === "today") {
+    } else if (dateObj.simpleDate === SIMPLE_DATE_TODAY) {
         getWeatherToday(res, area, dateObj);
     } else {
         callWeatherApiFourDays(area, dateObj)
@@ -127,13 +133,13 @@ function getSimpleDate(date) {
     let diffDays = Math.ceil(timeDiffInMs / (1000 * 3600 * 24));
     let simpleDate;
     if (diffDays === 0) {
-        simpleDate = "today";
+        simpleDate = SIMPLE_DATE_TODAY;
     } else if (diffDays === 1) {
-        simpleDate = "tomorrow";
+        simpleDate = SIMPLE_DATE_TOMORROW;
     } else if (diffDays === 2) {
-        simpleDate = "the day after tomorrow";
+        simpleDate = SIMPLE_DATE_DAY_AFTER_TOMORROW;
     } else {
-        simpleDate = "invalid";
+        simpleDate = SIMPLE_DATE_INVALID;
     }
     return simpleDate;
 }
@@ -208,7 +214,7 @@ function callWeatherApiFourDays (area, dateObj) {
             for (let i = 0; i < forecasts.length; i ++) {
                 let forecast = forecasts[i];
                 if (forecast.date === date) {
-                    if (simpleDate !== "invalid") {
+                    if (simpleDate !== SIMPLE_DATE_INVALID) {
                         weather = "The weather in " + area + " for " + simpleDate + " will be " + forecast.forecast.toLowerCase();
                         resolve(weather);
                     } else {
