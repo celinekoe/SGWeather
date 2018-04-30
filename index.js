@@ -26,15 +26,21 @@ const SIMPLE_DATE_NOW = "now";
 const SIMPLE_DATE_TODAY = "today";
 const SIMPLE_DATE_TOMORROW = "tomorrow";
 const SIMPLE_DATE_DAY_AFTER_TOMORROW = "the day after tomorrow";
+const SIMPLE_DATES = [ 
+    SIMPLE_DATE_NOW, 
+    SIMPLE_DATE_TODAY, 
+    SIMPLE_DATE_TOMORROW, 
+    SIMPLE_DATE_DAY_AFTER_TOMORROW
+];
 const SIMPLE_DATE_INVALID = "invalid";
 
 const EVENT_RAIN = "rain";
 const EVENT_SHOWER = "shower";
 
+
 const DEFAULT_FALLBACK_INTENT = "Sorry, I don't know about the weather";
 exports.weatherWebhook = (req, res) => {
     let intent = req.body.queryResult.intent.displayName;
-    console.log("printing intent..." + intent);
     let area = getArea(req);
     let dateObj = getDateObj(req);
 
@@ -108,8 +114,9 @@ function getWeather(res, area, dateObj) {
     if (dateObj.simpleDate === SIMPLE_DATE_NOW) {
         getWeatherNow(area)
         .then((weather) => {
+            let response = getWeatherResponse(weather, SIMPLE_DATE_NOW);
             res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': weather }));
+            res.send(JSON.stringify(response));
         })
         .catch((err) => {
             res.setHeader('Content-Type', 'application/json');
@@ -118,8 +125,9 @@ function getWeather(res, area, dateObj) {
     } else if (dateObj.simpleDate === SIMPLE_DATE_TODAY) {
         getWeatherToday(area)
         .then((weather) => {
+            let response = getWeatherResponse(weather, SIMPLE_DATE_TODAY);
             res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': weather }));
+            res.send(JSON.stringify(response));
         })
         .catch((err) => {
             res.setHeader('Content-Type', 'application/json');
@@ -128,8 +136,9 @@ function getWeather(res, area, dateObj) {
     } else {
         callWeatherApiFourDays(area, dateObj)
         .then((weather) => {
+            let response = getWeatherResponse(weather, dateObj.simpleDate);
             res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': weather }));
+            res.send(JSON.stringify(response));
         })
         .catch((err) => {
             res.setHeader('Content-Type', 'application/json');
@@ -148,6 +157,47 @@ function getWeatherNow(area) {
 
 function getWeatherToday(area) {
     return callWeatherApiTwentyFourHours(area);
+}
+
+function getWeatherResponse(weather, simpleDate) {
+    let simpleResponse = getWeatherSimpleResponse(weather);
+    let suggestions = getWeatherSuggestions(simpleDate);
+    return {
+        "fulfillmentText": weather,
+        "payload": {
+            "google": {
+                "richResponse": {
+                    "items": [
+                        {
+                            simpleResponse,
+                        },
+                    ],
+                    suggestions,
+                }
+            }
+        },
+    };
+}
+
+function getWeatherSimpleResponse(weather) {
+    return {
+        "textToSpeech": weather,
+        "displayText": weather,
+    };
+}
+
+function getWeatherSuggestions(currentSimpleDate) {
+    let suggestions = SIMPLE_DATES
+    .filter(simpleDate => {
+        return simpleDate !== currentSimpleDate;
+    })
+    .map(simpleDate => {
+        return {
+            "title": simpleDate,
+        };
+    });
+    suggestions.push({"title": "rain"});
+    return suggestions;
 }
 
 function callWeatherApiTwoHours (area) {
@@ -247,8 +297,9 @@ function isRaining(res, area, dateObj) {
             return getIsRainingNow(area, weather);
         })
         .then((isRainingString) => {
+            let response = getIsRainingResponse(isRainingString, SIMPLE_DATE_NOW);
             res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': isRainingString }));
+            res.send(JSON.stringify(response));
         })
         .catch((err) => {
             res.setHeader('Content-Type', 'application/json');
@@ -260,8 +311,9 @@ function isRaining(res, area, dateObj) {
             return getIsRainingToday(area, weather);
         })
         .then((isRainingString) => {
+            let response = getIsRainingResponse(isRainingString, SIMPLE_DATE_TODAY);
             res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': isRainingString }));
+            res.send(JSON.stringify(response));
         })
         .catch((err) => {
             res.setHeader('Content-Type', 'application/json');
@@ -273,8 +325,9 @@ function isRaining(res, area, dateObj) {
             return getIsRainingFourDays(area, dateObj, weather);
         })
         .then((isRainingString) => {
+            let response = getIsRainingResponse(isRainingString, dateObj.simpleDate);
             res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': isRainingString }));
+            res.send(JSON.stringify(response));
         })
         .catch((err) => {
             res.setHeader('Content-Type', 'application/json');
@@ -329,4 +382,45 @@ function getIsRainingFourDays(area, dateObj, weather) {
         }
         resolve(isRainingString);
     });
+}
+
+function getIsRainingResponse(isRainingString, simpleDate) {
+    let simpleResponse = getIsRainingSimpleResponse(isRainingString);
+    let suggestions = getIsRainingSuggestions(simpleDate);
+    return {
+        "fulfillmentText": isRainingString,
+        "payload": {
+            "google": {
+                "richResponse": {
+                    "items": [
+                        {
+                            simpleResponse,
+                        },
+                    ],
+                    suggestions,
+                }
+            }
+        },
+    };
+}
+
+function getIsRainingSimpleResponse(isRainingString) {
+    return {
+        "textToSpeech": isRainingString,
+        "displayText": isRainingString,
+    };
+}
+
+function getIsRainingSuggestions(currentSimpleDate) {
+    let suggestions = SIMPLE_DATES
+    .filter(simpleDate => {
+        return simpleDate !== currentSimpleDate;
+    })
+    .map(simpleDate => {
+        return {
+            "title": simpleDate,
+        };
+    });
+    suggestions.push({"title": "weather"});
+    return suggestions;
 }
