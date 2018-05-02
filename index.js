@@ -39,15 +39,16 @@ const EVENT_SHOWER = "shower";
 
 
 const DEFAULT_FALLBACK_INTENT = "Sorry, I don't know about the weather";
-exports.weatherWebhook = (req, res) => {
-    let intent = req.body.queryResult.intent.displayName;
+exports.weatherWebhook = (req, res) => {    
     let area = getArea(req);
     let dateObj = getDateObj(req);
+    let intent = req.body.queryResult.intent.displayName;
+    let sessionId = req.body.session.split("/").pop();
 
     if (intent === INTENT_GET_WEATHER || intent === INTENT_WEATHER_CONTEXT) {
-        getWeather(res, area, dateObj);
+        getWeather(res, area, dateObj, sessionId);
     } else if (intent === INTENT_IS_RAINING || intent === INTENT_RAINING_CONTEXT) {
-        isRaining(res, area, dateObj);
+        getIsRaining(res, area, dateObj, sessionId);
     } else {
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify({ 'fulfillmentText': DEFAULT_FALLBACK_INTENT }));
@@ -110,11 +111,11 @@ function getSimpleDate(date) {
     return simpleDate;
 }
 
-function getWeather(res, area, dateObj) {
+function getWeather(res, area, dateObj, sessionId) {
     if (dateObj.simpleDate === SIMPLE_DATE_NOW) {
         getWeatherNow(area)
         .then((weather) => {
-            let response = getWeatherResponse(weather, SIMPLE_DATE_NOW);
+            let response = getWeatherResponse(weather, SIMPLE_DATE_NOW, sessionId);
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(response));
         })
@@ -125,7 +126,7 @@ function getWeather(res, area, dateObj) {
     } else if (dateObj.simpleDate === SIMPLE_DATE_TODAY) {
         getWeatherToday(area)
         .then((weather) => {
-            let response = getWeatherResponse(weather, SIMPLE_DATE_TODAY);
+            let response = getWeatherResponse(weather, SIMPLE_DATE_TODAY, sessionId);
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(response));
         })
@@ -136,7 +137,7 @@ function getWeather(res, area, dateObj) {
     } else {
         callWeatherApiFourDays(area, dateObj)
         .then((weather) => {
-            let response = getWeatherResponse(weather, dateObj.simpleDate);
+            let response = getWeatherResponse(weather, dateObj.simpleDate, sessionId);
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(response));
         })
@@ -159,9 +160,10 @@ function getWeatherToday(area) {
     return callWeatherApiTwentyFourHours(area);
 }
 
-function getWeatherResponse(weather, simpleDate) {
+function getWeatherResponse(weather, simpleDate, sessionId) {
     let simpleResponse = getWeatherSimpleResponse(weather);
     let suggestions = getWeatherSuggestions(simpleDate);
+    let outputContexts = getWeatherOutputContexts(sessionId);
     return {
         "fulfillmentText": weather,
         "payload": {
@@ -176,6 +178,7 @@ function getWeatherResponse(weather, simpleDate) {
                 }
             }
         },
+        outputContexts,
     };
 }
 
@@ -198,6 +201,28 @@ function getWeatherSuggestions(currentSimpleDate) {
     });
     suggestions.push({"title": "rain"});
     return suggestions;
+}
+
+function getWeatherOutputContexts(sessionId) {
+    let weatherContext = getWeatherContext(sessionId, 5);
+    let rainingContext = getRainingContext(sessionId, 0);
+    return [weatherContext, rainingContext];
+}
+
+function getWeatherContext(sessionId, lifespanCount) {
+    return {
+        "name": "projects/sgweather-8b165/agent/sessions/" + sessionId + "/contexts/weather",
+        lifespanCount,
+        "parameters": {},
+    };
+}
+
+function getRainingContext(sessionId, lifespanCount) {
+    return {
+        "name": "projects/sgweather-8b165/agent/sessions/" + sessionId + "/contexts/raining",
+        lifespanCount,
+        "parameters": {},
+    };
 }
 
 function callWeatherApiTwoHours (area) {
@@ -290,14 +315,14 @@ function callWeatherApiFourDays (area, dateObj) {
     });
 }
 
-function isRaining(res, area, dateObj) {
+function getIsRaining(res, area, dateObj, sessionId) {
     if (dateObj.simpleDate === SIMPLE_DATE_NOW) {
         getWeatherNow(area)
         .then((weather) => {
             return getIsRainingNow(area, weather);
         })
         .then((isRainingString) => {
-            let response = getIsRainingResponse(isRainingString, SIMPLE_DATE_NOW);
+            let response = getIsRainingResponse(isRainingString, SIMPLE_DATE_NOW, sessionId);
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(response));
         })
@@ -311,7 +336,7 @@ function isRaining(res, area, dateObj) {
             return getIsRainingToday(area, weather);
         })
         .then((isRainingString) => {
-            let response = getIsRainingResponse(isRainingString, SIMPLE_DATE_TODAY);
+            let response = getIsRainingResponse(isRainingString, SIMPLE_DATE_TODAY, sessionId);
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(response));
         })
@@ -325,7 +350,7 @@ function isRaining(res, area, dateObj) {
             return getIsRainingFourDays(area, dateObj, weather);
         })
         .then((isRainingString) => {
-            let response = getIsRainingResponse(isRainingString, dateObj.simpleDate);
+            let response = getIsRainingResponse(isRainingString, dateObj.simpleDate, sessionId);
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(response));
         })
@@ -384,9 +409,10 @@ function getIsRainingFourDays(area, dateObj, weather) {
     });
 }
 
-function getIsRainingResponse(isRainingString, simpleDate) {
+function getIsRainingResponse(isRainingString, simpleDate, sessionId) {
     let simpleResponse = getIsRainingSimpleResponse(isRainingString);
     let suggestions = getIsRainingSuggestions(simpleDate);
+    let outputContexts = getIsRainingOutputContexts(sessionId);
     return {
         "fulfillmentText": isRainingString,
         "payload": {
@@ -401,6 +427,7 @@ function getIsRainingResponse(isRainingString, simpleDate) {
                 }
             }
         },
+        outputContexts,
     };
 }
 
@@ -423,4 +450,10 @@ function getIsRainingSuggestions(currentSimpleDate) {
     });
     suggestions.push({"title": "weather"});
     return suggestions;
+}
+
+function getIsRainingOutputContexts(sessionId) {
+    let weatherContext = getWeatherContext(sessionId, 0);
+    let rainingContext = getRainingContext(sessionId, 5);
+    return [weatherContext, rainingContext];
 }
