@@ -13,6 +13,8 @@
 
 'use strict';
 const rp = require('request-promise');
+const functions = require('firebase-functions');
+const DialogflowApp = require('actions-on-google').DialogflowApp;
 
 const INTENT_GET_WEATHER = "GetWeather";
 const INTENT_IS_RAINING = "IsRaining";
@@ -39,7 +41,7 @@ const EVENT_SHOWER = "shower";
 
 
 const DEFAULT_FALLBACK_INTENT = "Sorry, I don't know about the weather";
-exports.weatherWebhook = (req, res) => {    
+exports.weatherWebhook = functions.https.onRequest((req, res) => {
     let area = getArea(req);
     let dateObj = getDateObj(req);
     let intent = req.body.queryResult.intent.displayName;
@@ -53,7 +55,7 @@ exports.weatherWebhook = (req, res) => {
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify({ 'fulfillmentText': DEFAULT_FALLBACK_INTENT }));
     }
-};
+});
 
 function getArea(req) {
     let area;
