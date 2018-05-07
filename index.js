@@ -20,8 +20,340 @@ const INTENT_GET_WEATHER = "GetWeather";
 const INTENT_IS_RAINING = "IsRaining";
 const INTENT_WEATHER_CONTEXT = "WeatherContext";
 const INTENT_RAINING_CONTEXT = "RainingContext";
+const INTENT_REQUEST_LOCATION = "RequestLocation";
 
 const AREA_SINGAPORE = "Singapore";
+const AREAS = [
+    {
+        "name": "Ang Mo Kio",
+        "coordinates": {
+            "latitude": 1.375,
+            "longitude": 103.839
+        }
+    },
+    {
+        "name": "Bedok",
+        "coordinates": {
+            "latitude": 1.321,
+            "longitude": 103.924
+        }
+    },
+    {
+        "name": "Bishan",
+        "coordinates": {
+            "latitude": 1.350772,
+            "longitude": 103.839
+        }
+    },
+    {
+        "name": "Boon Lay",
+        "coordinates": {
+            "latitude": 1.304,
+            "longitude": 103.701
+        }
+    },
+    {
+        "name": "Bukit Batok",
+        "coordinates": {
+            "latitude": 1.353,
+            "longitude": 103.754
+        }
+    },
+    {
+        "name": "Bukit Merah",
+        "coordinates": {
+            "latitude": 1.277,
+            "longitude": 103.819
+        }
+    },
+    {
+        "name": "Bukit Panjang",
+        "coordinates": {
+            "latitude": 1.362,
+            "longitude": 103.77195
+        }
+    },
+    {
+        "name": "Bukit Timah",
+        "coordinates": {
+            "latitude": 1.325,
+            "longitude": 103.791
+        }
+    },
+    {
+        "name": "Central Water Catchment",
+        "coordinates": {
+            "latitude": 1.38,
+            "longitude": 103.805
+        }
+    },
+    {
+        "name": "Changi",
+        "coordinates": {
+            "latitude": 1.357,
+            "longitude": 103.987
+        }
+    },
+    {
+        "name": "Choa Chu Kang",
+        "coordinates": {
+            "latitude": 1.377,
+            "longitude": 103.745
+        }
+    },
+    {
+        "name": "Clementi",
+        "coordinates": {
+            "latitude": 1.315,
+            "longitude": 103.76
+        }
+    },
+    {
+        "name": "City",
+        "coordinates": {
+            "latitude": 1.292,
+            "longitude": 103.844
+        }
+    },
+    {
+        "name": "Geylang",
+        "coordinates": {
+            "latitude": 1.318,
+            "longitude": 103.884
+        }
+    },
+    {
+        "name": "Hougang",
+        "coordinates": {
+            "latitude": 1.361218,
+            "longitude": 103.886
+        }
+    },
+    {
+        "name": "Jalan Bahar",
+        "coordinates": {
+            "latitude": 1.347,
+            "longitude": 103.67
+        }
+    },
+    {
+        "name": "Jurong East",
+        "coordinates": {
+            "latitude": 1.326,
+            "longitude": 103.737
+        }
+    },
+    {
+        "name": "Jurong Island",
+        "coordinates": {
+            "latitude": 1.266,
+            "longitude": 103.699
+        }
+    },
+    {
+        "name": "Jurong West",
+        "coordinates": {
+            "latitude": 1.34039,
+            "longitude": 103.705
+        }
+    },
+    {
+        "name": "Kallang",
+        "coordinates": {
+            "latitude": 1.312,
+            "longitude": 103.862
+        }
+    },
+    {
+        "name": "Lim Chu Kang",
+        "coordinates": {
+            "latitude": 1.423,
+            "longitude": 103.717332
+        }
+    },
+    {
+        "name": "Mandai",
+        "coordinates": {
+            "latitude": 1.419,
+            "longitude": 103.812
+        }
+    },
+    {
+        "name": "Marine Parade",
+        "coordinates": {
+            "latitude": 1.297,
+            "longitude": 103.891
+        }
+    },
+    {
+        "name": "Novena",
+        "coordinates": {
+            "latitude": 1.327,
+            "longitude": 103.826
+        }
+    },
+    {
+        "name": "Pasir Ris",
+        "coordinates": {
+            "latitude": 1.37,
+            "longitude": 103.948
+        }
+    },
+    {
+        "name": "Paya Lebar",
+        "coordinates": {
+            "latitude": 1.358,
+            "longitude": 103.914
+        }
+    },
+    {
+        "name": "Pioneer",
+        "coordinates": {
+            "latitude": 1.315,
+            "longitude": 103.675
+        }
+    },
+    {
+        "name": "Pulau Tekong",
+        "coordinates": {
+            "latitude": 1.403,
+            "longitude": 104.053
+        }
+    },
+    {
+        "name": "Pulau Ubin",
+        "coordinates": {
+            "latitude": 1.404,
+            "longitude": 103.96
+        }
+    },
+    {
+        "name": "Punggol",
+        "coordinates": {
+            "latitude": 1.401,
+            "longitude": 103.904
+        }
+    },
+    {
+        "name": "Queenstown",
+        "coordinates": {
+            "latitude": 1.291,
+            "longitude": 103.78576
+        }
+    },
+    {
+        "name": "Seletar",
+        "coordinates": {
+            "latitude": 1.404,
+            "longitude": 103.869
+        }
+    },
+    {
+        "name": "Sembawang",
+        "coordinates": {
+            "latitude": 1.445,
+            "longitude": 103.818495
+        }
+    },
+    {
+        "name": "Sengkang",
+        "coordinates": {
+            "latitude": 1.384,
+            "longitude": 103.891443
+        }
+    },
+    {
+        "name": "Sentosa",
+        "coordinates": {
+            "latitude": 1.243,
+            "longitude": 103.832
+        }
+    },
+    {
+        "name": "Serangoon",
+        "coordinates": {
+            "latitude": 1.357,
+            "longitude": 103.865
+        }
+    },
+    {
+        "name": "Southern Islands",
+        "coordinates": {
+            "latitude": 1.208,
+            "longitude": 103.842
+        }
+    },
+    {
+        "name": "Sungei Kadut",
+        "coordinates": {
+            "latitude": 1.413,
+            "longitude": 103.756
+        }
+    },
+    {
+        "name": "Tampines",
+        "coordinates": {
+            "latitude": 1.345,
+            "longitude": 103.944
+        }
+    },
+    {
+        "name": "Tanglin",
+        "coordinates": {
+            "latitude": 1.308,
+            "longitude": 103.813
+        }
+    },
+    {
+        "name": "Tengah",
+        "coordinates": {
+            "latitude": 1.374,
+            "longitude": 103.715
+        }
+    },
+    {
+        "name": "Toa Payoh",
+        "coordinates": {
+            "latitude": 1.334304,
+            "longitude": 103.856327
+        }
+    },
+    {
+        "name": "Tuas",
+        "coordinates": {
+            "latitude": 1.294947,
+            "longitude": 103.635
+        }
+    },
+    {
+        "name": "Western Islands",
+        "coordinates": {
+            "latitude": 1.205926,
+            "longitude": 103.746
+        }
+    },
+    {
+        "name": "Western Water Catchment",
+        "coordinates": {
+            "latitude": 1.405,
+            "longitude": 103.689
+        }
+    },
+    {
+        "name": "Woodlands",
+        "coordinates": {
+            "latitude": 1.432,
+            "longitude": 103.786528
+        }
+    },
+    {
+        "name": "Yishun",
+        "coordinates": {
+            "latitude": 1.418,
+            "longitude": 103.839
+        }
+    }
+];
 
 const DATE_NOW = "now";
 const SIMPLE_DATE_NOW = "now";
@@ -36,15 +368,19 @@ const SIMPLE_DATES = [
 ];
 const SIMPLE_DATE_INVALID = "invalid";
 
+const CONTEXT_WEATHER = "weather";
+const CONTEXT_RAINING = "raining"
+
 const EVENT_RAIN = "rain";
 const EVENT_SHOWER = "shower";
 
 
 const DEFAULT_FALLBACK_INTENT = "Sorry, I don't know about the weather";
-exports.weatherWebhook = functions.https.onRequest((req, res) => {
+exports.weatherWebhook = (req, res) => {
     let area = getArea(req);
     let dateObj = getDateObj(req);
-    let intent = req.body.queryResult.intent.displayName;
+    let intent = getIntent(req);
+    console.log("printing intent..." + intent);
     let sessionId = req.body.session.split("/").pop();
 
     if (intent === INTENT_GET_WEATHER || intent === INTENT_WEATHER_CONTEXT) {
@@ -55,30 +391,98 @@ exports.weatherWebhook = functions.https.onRequest((req, res) => {
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify({ 'fulfillmentText': DEFAULT_FALLBACK_INTENT }));
     }
-});
+}
+
+function getIntent(req) {
+    let intent = req.body.queryResult.intent.displayName;
+    if (intent === INTENT_REQUEST_LOCATION) {
+        intent = getOriginalIntent(req);
+    }
+    return intent;
+}
+
+function getOriginalIntent(req) {
+    let outputContexts = req.body.queryResult.outputContexts;
+
+    let simpleOutputContexts = outputContexts
+    .map(outputContext => {
+        return outputContext.name.split("/").pop();
+    });
+
+    console.log("printing simpleOutputContexts...");
+    console.log(simpleOutputContexts);
+
+    let originalIntent;
+    for (let i = 0; i < simpleOutputContexts.length; i++) {
+        if (simpleOutputContexts[i] === CONTEXT_WEATHER) {
+            originalIntent = INTENT_GET_WEATHER;
+            break;
+        } else if (simpleOutputContexts[i] === CONTEXT_RAINING) {
+            originalIntent = INTENT_IS_RAINING;
+            break;
+        }
+    }
+
+    return originalIntent;
+}
 
 function getArea(req) {
+    let intent = req.body.queryResult.intent.displayName;
     let area;
-    if (req.body.queryResult.parameters["area"]) {
-        area = req.body.queryResult.parameters["area"];
+    if (intent !== INTENT_REQUEST_LOCATION) {
+        if (req.body.queryResult.parameters["area"]) {
+            area = req.body.queryResult.parameters["area"];
+        } else {
+            area = AREA_SINGAPORE;
+        }    
     } else {
-        area = AREA_SINGAPORE;
+        let coordinates = req.body.originalDetectIntentRequest.payload.device.location.coordinates;
+        area = getClosestArea(coordinates);
     }
     return area;
 }
 
+function getClosestArea(coordinates) {
+    let lat = coordinates.latitude;
+    let long = coordinates.longitude;
+    let closestArea = AREAS[0];
+    let latDiff = AREAS[0].coordinates.latitude - lat;
+    let longDiff = AREAS[0].coordinates.longitude - long;
+    let closestDistance = Math.pow(latDiff, 2) + Math.pow(longDiff, 2);
+    for (let i = 1; i < AREAS.length; i++) {
+        let tempLatDiff = AREAS[i].coordinates.latitude - lat;
+        let tempLongDiff = AREAS[i].coordinates.longitude - long;
+        let tempClosestDistance = Math.pow(tempLatDiff, 2) + Math.pow(tempLongDiff, 2);
+        if (tempClosestDistance < closestDistance) {
+            closestArea = AREAS[i];
+            closestDistance = tempClosestDistance;
+        }
+    }
+    return closestArea.name;
+}
+
 function getDateObj(req) {
+    let intent = req.body.queryResult.intent.displayName;
     let date;
     let simpleDate;
     let dateObj;
-    if (req.body.queryResult.parameters["date"]) {
-        date = req.body.queryResult.parameters["date"];
-        date = getFormattedDate(date);
-        simpleDate = getSimpleDate(date);
-        dateObj = {
-            date,
-            simpleDate,
-        }
+    if (intent !== INTENT_REQUEST_LOCATION) {
+        if (req.body.queryResult.parameters["date"]) {
+            date = req.body.queryResult.parameters["date"];
+            date = getFormattedDate(date);
+            simpleDate = getSimpleDate(date);
+            dateObj = {
+                date,
+                simpleDate,
+            }
+        } else {
+            date = DATE_NOW;
+            simpleDate = SIMPLE_DATE_NOW;
+            dateObj = {
+                date,
+                simpleDate,
+            }
+        }  
     } else {
         date = DATE_NOW;
         simpleDate = SIMPLE_DATE_NOW;
@@ -115,16 +519,22 @@ function getSimpleDate(date) {
 
 function getWeather(res, area, dateObj, sessionId) {
     if (dateObj.simpleDate === SIMPLE_DATE_NOW) {
-        getWeatherNow(area)
-        .then((weather) => {
-            let response = getWeatherResponse(weather, SIMPLE_DATE_NOW, sessionId);
+        if (area !== AREA_SINGAPORE) {
+            getWeatherNow(area)
+            .then((weather) => {
+                let response = getWeatherResponse(weather, SIMPLE_DATE_NOW, sessionId);
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify(response));
+            })
+            .catch((err) => {
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify({ 'fulfillmentText': err }));
+            });
+        } else {
+            let response = getWeatherLocationResponse(sessionId);
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(response));
-        })
-        .catch((err) => {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': err }));
-        });
+        }
     } else if (dateObj.simpleDate === SIMPLE_DATE_TODAY) {
         getWeatherToday(area)
         .then((weather) => {
@@ -213,7 +623,7 @@ function getWeatherOutputContexts(sessionId) {
 
 function getWeatherContext(sessionId, lifespanCount) {
     return {
-        "name": "projects/sgweather-8b165/agent/sessions/" + sessionId + "/contexts/weather",
+        "name": "projects/sgweather-8b165/agent/sessions/" + sessionId + "/contexts/" + CONTEXT_WEATHER,
         lifespanCount,
         "parameters": {},
     };
@@ -221,9 +631,30 @@ function getWeatherContext(sessionId, lifespanCount) {
 
 function getRainingContext(sessionId, lifespanCount) {
     return {
-        "name": "projects/sgweather-8b165/agent/sessions/" + sessionId + "/contexts/raining",
+        "name": "projects/sgweather-8b165/agent/sessions/" + sessionId + "/contexts/" + CONTEXT_RAINING,
         lifespanCount,
         "parameters": {},
+    };
+}
+
+function getWeatherLocationResponse(sessionId) {
+    let outputContexts = getWeatherOutputContexts(sessionId);
+    return {
+        "fulfillmentText": "requesting location permission",
+        "payload": {
+            "google": {
+                "expectUserResponse": true,
+                "systemIntent": {
+                    "intent": "actions.intent.PERMISSION",
+                    "data": {
+                        "@type": "type.googleapis.com/google.actions.v2.PermissionValueSpec",
+                        "optContext": "To provide an accurate experience, ",
+                        "permissions": ["DEVICE_PRECISE_LOCATION"]
+                    },
+                },
+            },
+        },
+        outputContexts,
     };
 }
 
@@ -319,19 +750,25 @@ function callWeatherApiFourDays (area, dateObj) {
 
 function getIsRaining(res, area, dateObj, sessionId) {
     if (dateObj.simpleDate === SIMPLE_DATE_NOW) {
-        getWeatherNow(area)
-        .then((weather) => {
-            return getIsRainingNow(area, weather);
-        })
-        .then((isRainingString) => {
-            let response = getIsRainingResponse(isRainingString, SIMPLE_DATE_NOW, sessionId);
+        if (area !== AREA_SINGAPORE) {
+            getWeatherNow(area)
+            .then((weather) => {
+                return getIsRainingNow(area, weather);
+            })
+            .then((isRainingString) => {
+                let response = getIsRainingResponse(isRainingString, SIMPLE_DATE_NOW, sessionId);
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify(response));
+            })
+            .catch((err) => {
+                res.setHeader('Content-Type', 'application/json');
+                res.send(JSON.stringify({ 'fulfillmentText': err }));
+            });
+        } else {
+            let response = getIsRainingLocationResponse(sessionId);
             res.setHeader('Content-Type', 'application/json');
             res.send(JSON.stringify(response));
-        })
-        .catch((err) => {
-            res.setHeader('Content-Type', 'application/json');
-            res.send(JSON.stringify({ 'fulfillmentText': err }));
-        });
+        }
     } else if (dateObj.simpleDate === SIMPLE_DATE_TODAY) {
         getWeatherToday(area)
         .then((weather) => {
@@ -458,4 +895,25 @@ function getIsRainingOutputContexts(sessionId) {
     let weatherContext = getWeatherContext(sessionId, 0);
     let rainingContext = getRainingContext(sessionId, 5);
     return [weatherContext, rainingContext];
+}
+
+function getIsRainingLocationResponse(sessionId) {
+    let outputContexts = getIsRainingOutputContexts(sessionId);
+    return {
+        "fulfillmentText": "requesting location permission",
+        "payload": {
+            "google": {
+                "expectUserResponse": true,
+                "systemIntent": {
+                    "intent": "actions.intent.PERMISSION",
+                    "data": {
+                        "@type": "type.googleapis.com/google.actions.v2.PermissionValueSpec",
+                        "optContext": "To provide an accurate experience, ",
+                        "permissions": ["DEVICE_PRECISE_LOCATION"]
+                    },
+                },
+            },
+        },
+        outputContexts,
+    };
 }
